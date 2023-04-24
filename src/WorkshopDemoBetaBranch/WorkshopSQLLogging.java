@@ -27,7 +27,7 @@ public class WorkshopSQLLogging extends PamDetectionLogging {
 		this.workshopController = workshopController;
 		
 		// create the table definition. 
-		tableDefinition = getTableDefinition();
+		tableDefinition = (PamTableDefinition) getTableDefinition();
 		PamTableItem tableItem;
 
 		// add additional table items not included in PamDetectionLogging 
