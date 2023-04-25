@@ -21,12 +21,24 @@
  */
 
 
-package WorkshopDemoBetaBranch;
+package workshopdemodetector;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
 import fftManager.FFTDataUnit;
 
+/**
+ * This is the class that makes this module available as a PAMGuard plugin which can 
+ * be added to an existing PAMGuard configuration. <p> 
+ * When developing, it's easiest to copy PamMode.MamModel and add the detector as for
+ * other modules, linking to a complete PAMGuard project code. This makes debugging easy across
+ * both the plugin and across PAMGuard. 
+ * <p>
+ * Once developed though, export a jar file without including PamModel in the export and put
+ * the jar in your Program Files/Pamguard/plugins folder and it should work with any PAMGuard installation. 
+ * @author dg50
+ *
+ */
 public class WorkshopPlugin implements PamPluginInterface {
 	
 	String jarFile;
@@ -108,7 +120,7 @@ public class WorkshopPlugin implements PamPluginInterface {
 
 	@Override
 	public String getVersion() {
-		return "1.0.2";
+		return "2.0.0";
 	}
 
 	@Override
@@ -118,7 +130,7 @@ public class WorkshopPlugin implements PamPluginInterface {
 
 	@Override
 	public String getPamVerTestedOn() {
-		return "2.00.14";
+		return "2.02.07";
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector.swing;
 
 import java.awt.Color;
 

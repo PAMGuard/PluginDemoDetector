@@ -1,4 +1,4 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector.swing;
 
 import java.awt.BorderLayout;
 import java.awt.Frame;
@@ -12,7 +12,7 @@ import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 
 import fftManager.FFTDataUnit;
-
+import workshopdemodetector.WorkshopProcessParameters;
 import PamController.PamController;
 import PamView.dialog.PamDialog;
 import PamView.dialog.SourcePanel;
@@ -124,8 +124,7 @@ public class WorkshopParametersDialog extends PamDialog {
 		 * set the parameters in the source list. 
 		 * including the channel list and the actual data source. 
 		 */
-		ArrayList<PamDataBlock> fftSources = PamController.getInstance().getFFTDataBlocks();
-		sourcePanel.setSource(fftSources.get(workshopProcessParameters.fftDataBlock));
+		sourcePanel.setSource(workshopProcessParameters.fftDataName);
 		sourcePanel.setChannelList(workshopProcessParameters.channelList);
 		
 		background.setText(String.format("%.1f", workshopProcessParameters.backgroundTimeConstant));
@@ -147,7 +146,11 @@ public class WorkshopParametersDialog extends PamDialog {
 		/*
 		 * get the source parameters
 		 */
-		workshopProcessParameters.fftDataBlock = sourcePanel.getSourceIndex();
+		PamDataBlock fftDataBlock = sourcePanel.getSource();
+		if (fftDataBlock == null) {
+			return showWarning("you must select a FFT data source as input");
+		}
+		workshopProcessParameters.fftDataName = fftDataBlock.getLongDataName();
 		workshopProcessParameters.channelList = sourcePanel.getChannelList();
 		if (workshopProcessParameters.channelList == 0) {
 			return false;

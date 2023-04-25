@@ -1,4 +1,4 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector;
 
 import PamDetection.PamDetection;
 import PamguardMVC.PamDataUnit;

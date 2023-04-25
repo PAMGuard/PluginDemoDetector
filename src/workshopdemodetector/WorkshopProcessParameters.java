@@ -1,4 +1,4 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector;
 
 import java.awt.Color;
 import java.io.Serializable;
@@ -19,34 +19,35 @@ public class WorkshopProcessParameters implements Serializable, Cloneable {
 	static final long serialVersionUID = 1;
 	
 	/**
-	 * use the first (0th) fft datablock in the model.
+	 * Use names of FFT data blocks, not indexes, 
+	 * they are more robust to changes. 
 	 */
-	int fftDataBlock = 0;  
+	public String fftDataName;  
 	
 	/**
 	 * Low frequency for energy summation
 	 */
-	int lowFreq = 1000;
+	public int lowFreq = 1000;
 
 	/**
 	 * High frequency for energy summation
 	 */
-	int highFreq = 10000;
+	public int highFreq = 10000;
 	
 	/**
 	 * time constant for background noise measurement. 
 	 */
-	double backgroundTimeConstant = 10; 
+	public double backgroundTimeConstant = 10; 
 	
 	/**
 	 * Detection threshold in dB. 
 	 */
-	double threshold = 6;
+	public double threshold = 6;
 	
 	/**
 	 * Bitmap of channels to be used - use all available. 
 	 */
-	int channelList = 0xFFFF;
+	public int channelList = 0xFFFF;
 	
 
 	@Override
@@ -56,7 +57,7 @@ public class WorkshopProcessParameters implements Serializable, Cloneable {
 	 * continually cast to (WorkshopProcessParameters) or handle
 	 * the exception CloneNotSupportedException.
 	 */
-	protected WorkshopProcessParameters clone() {
+	public WorkshopProcessParameters clone() {
 		try {
 			return (WorkshopProcessParameters) super.clone();
 		}

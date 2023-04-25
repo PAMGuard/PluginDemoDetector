@@ -22,11 +22,12 @@
 
 
 
-package WorkshopDemoBetaBranch;
+package workshopdemodetector.swing;
 
 import PamView.symbol.StandardSymbolManager;
 import PamView.symbol.SymbolData;
 import PamguardMVC.PamDataBlock;
+import workshopdemodetector.WorkshopController;
 
 /**
  * @author mo55

@@ -1,4 +1,4 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector;
 
 import PamguardMVC.AcousticDataUnit;
 import PamguardMVC.DataUnit2D;

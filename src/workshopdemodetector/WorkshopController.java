@@ -1,4 +1,4 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector;
 
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
@@ -17,6 +17,8 @@ import PamModel.PamModuleInfo;
 import PamView.PamSymbol;
 import PamView.PamSymbolDialog;
 import fftManager.FFTDataUnit;
+import workshopdemodetector.swing.WorkshopParametersDialog;
+import workshopdemodetector.swing.WorkshopPluginPanelProvider;
 
 /**
  * Simple detector designed to demonstrate main Pamguard developer 
@@ -97,7 +99,7 @@ public class WorkshopController extends PamControlledUnit implements PamSettings
 		case PamControllerInterface.REMOVE_CONTROLLEDUNIT:
 		case PamControllerInterface.ADD_DATABLOCK:
 		case PamControllerInterface.REMOVE_DATABLOCK:
-			workshopProcess.prepareProcess();
+			getWorkshopProcess().prepareProcess();
 		}
 	}
 
@@ -153,7 +155,7 @@ public class WorkshopController extends PamControlledUnit implements PamSettings
 		public void actionPerformed(ActionEvent e) {
 
 			WorkshopProcessParameters newParams = WorkshopParametersDialog.showDialog(parentFrame, 
-					workshopProcessParameters);
+					getWorkshopProcessParameters());
 			/*
 			 * The dialog returns null if the cancel button was set. If it's 
 			 * not null, then clone the parameters onto the main parameters reference
@@ -161,7 +163,7 @@ public class WorkshopController extends PamControlledUnit implements PamSettings
 			 */
 			if (newParams != null) {
 				workshopProcessParameters = newParams.clone();
-				workshopProcess.prepareProcess();
+				getWorkshopProcess().prepareProcess();
 			}
 			
 		}
@@ -173,7 +175,7 @@ public class WorkshopController extends PamControlledUnit implements PamSettings
 	 * which will enable Pamguard to save settings between runs
 	 */
 	public Serializable getSettingsReference() {
-		return workshopProcessParameters;
+		return getWorkshopProcessParameters();
 	}
 
 	public long getSettingsVersion() {
@@ -183,6 +185,20 @@ public class WorkshopController extends PamControlledUnit implements PamSettings
 	public boolean restoreSettings(PamControlledUnitSettings pamControlledUnitSettings) {
 		workshopProcessParameters = (WorkshopProcessParameters) pamControlledUnitSettings.getSettings();
 		return true;
+	}
+
+	/**
+	 * @return the workshopProcess
+	 */
+	public WorkshopProcess getWorkshopProcess() {
+		return workshopProcess;
+	}
+
+	/**
+	 * @return the workshopProcessParameters
+	 */
+	public WorkshopProcessParameters getWorkshopProcessParameters() {
+		return workshopProcessParameters;
 	}
 
 }

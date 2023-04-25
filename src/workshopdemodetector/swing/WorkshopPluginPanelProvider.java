@@ -1,7 +1,11 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector.swing;
 
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.ListIterator;
 
 import Layout.DisplayPanel;
 import Layout.DisplayPanelContainer;
@@ -11,10 +15,15 @@ import Layout.PamAxis;
 import PamUtils.PamUtils;
 import PamView.PamColors;
 import PamView.PamColors.PamColor;
+import PamguardMVC.PamConstants;
 import PamguardMVC.PamDataBlock;
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
 import PamguardMVC.PamObserver;
+import gpl.GPLStateDataUnit;
+import workshopdemodetector.BackgroundDataUnit;
+import workshopdemodetector.WorkshopController;
+import workshopdemodetector.WorkshopProcess;
 
 /**
  * Provide a graphics panel, or panels that can be added to the bottom of spectrogram
@@ -73,12 +82,13 @@ public class WorkshopPluginPanelProvider implements DisplayPanelProvider {
 		public WorkshopPluginPanel(WorkshopPluginPanelProvider workshopPluginPanelProvider, DisplayPanelContainer displayPanelContainer) {
 			super(workshopPluginPanelProvider, displayPanelContainer);
 			this.workshopPluginPanelProvider = workshopPluginPanelProvider;
-			workshopProcess = workshopPluginPanelProvider.workshopController.workshopProcess;
+			workshopProcess = workshopPluginPanelProvider.workshopController.getWorkshopProcess();
 			westAxis = new PamAxis(0, 0, 1, 1, minValue, maxValue, true, "dB", "%.0f");
 
 			// subscribe to the background data block
-			backgroundDataBlock = workshopProcess.backgroundDataBlock;
+			backgroundDataBlock = workshopProcess.getBackgroundDataBlock();
 			backgroundDataBlock.addObserver(this);
+			backgroundDataBlock.setNaturalLifetimeMillis(30000);
 		}
 
 		@Override
@@ -95,27 +105,16 @@ public class WorkshopPluginPanelProvider implements DisplayPanelProvider {
 		private final int clearOffset = 4;
 		@Override
 		/*
-		 * This one gets called every time the spectrogram display advances. Use this opportunity to clear
-		 * the display ahead of the current drawing position and also to redraw the 0 and threshold lines
-		 * on the display. 
+		 * This one gets called every time the spectrogram display advances. 
+		 * however, this probably isn't called in the AWT thread, but one of PAMGuards
+		 * many processing threads. 
+		 * Best not to do any drawing here, but call repaint which will cause the window to update. A 
+		 * callback from the windows repaint function will then get used to do that actual drawing 
+		 * in the AWT thread
 		 */
 		public void containerNotification(DisplayPanelContainer displayContainer, int noteType) {
-
-			// copy some code out of the click panel to clear the display.			int clearOffset = 4;
-			if (getDisplayImage() == null) return;
-			int thisClear = (int) displayContainer.getCurrentXPixel();
-			if (lastClear == thisClear) return;
-			clearImage(lastClear+clearOffset, thisClear+clearOffset, true);
-			Graphics g = getDisplayImage().getGraphics();
-			g.setColor(PamColors.getInstance().getColor(PamColor.GRID));
-			int y = getYPixel(workshopController.workshopProcessParameters.threshold);
-			g.drawLine(lastClear-1, y, thisClear, y);
-			y = getYPixel(0);
-			g.drawLine(lastClear-1, y, thisClear, y);
-			lastClear = thisClear;
 			
-			
-			repaint();
+			repaint(100);
 			
 		}
 		
@@ -137,7 +136,9 @@ public class WorkshopPluginPanelProvider implements DisplayPanelProvider {
 		}
 
 		public long getRequiredDataHistory(PamObservable o, Object arg) {
-			return (long) this.displayPanelContainer.getXDuration();
+			
+			long millis = (long) this.displayPanelContainer.getXDuration()+10000;
+			return millis;
 		}
 
 		public void noteNewSettings() {
@@ -159,41 +160,72 @@ public class WorkshopPluginPanelProvider implements DisplayPanelProvider {
 		 * new data have arrived - work out what channel it's from and plot it.
 		 */
 		public void update(PamObservable o, PamDataUnit arg) {
-			/*
-			 * Get the channel and y pixel for this data point
-			 */
-			BackgroundDataUnit backgroundDataUnit = (BackgroundDataUnit) arg;
-			int channel = PamUtils.getSingleChannel(backgroundDataUnit.getChannelBitmap());
-			double dbValue = backgroundDataUnit.getBackground();
-			int yPix = getYPixel(dbValue);
+		}
 
-			// get the graphics handle we're writing to. 
+		@Override
+		public void prepareImage() {
+			drawImage();
+		}
+		
+		/**
+		 * Draw the image. This gets called from the AWT thread just as the display 
+		 * is about to be updated. Note that the display may be wrapping or 
+		 * scrolling. This should handle both. 
+		 */
+		private void drawImage() {
+			DisplayPanelContainer displayContainer = getDisplayPanelContainer();
+			double xPix = displayContainer.getCurrentXPixel();
+			long xTime = displayContainer.getCurrentXTime();
+			double xDuration = displayContainer.getXDuration();
+			long minTime = (long) (xTime-xDuration);
 			BufferedImage image = getDisplayImage();
-			if (image == null) return;
-			Graphics g = image.getGraphics();
+			int imHeight = image.getHeight();
+			int imWidth = image.getWidth();
+			double xScale = imWidth / xDuration;
+			Graphics g = getDisplayImage().getGraphics();
 			
-			// work out what the X coordinate would have been at the time of 
-			// the current data block 
-			double xScale = getInnerWidth() / displayPanelContainer.getXDuration();
-			int currentX = (int) ((backgroundDataUnit.getTimeMilliseconds() - displayPanelContainer.getCurrentXTime()) * 
-					xScale + displayPanelContainer.getCurrentXPixel());
-				
+			PamColors pamColours = PamColors.getInstance();
+			g.setColor(pamColours.getColor(PamColor.PlOTWINDOW));
+			g.fillRect(0, 0, image.getWidth(), image.getHeight());
 			
-			// set the colour using standard colours. 
-			g.setColor(PamColors.getInstance().getChannelColor(channel));
-			
-			// handle wrap around. i.e don't draw lines from the far right of 
-			// the screen back to the left !
-			if (currentX >= lastXValue[channel]) {
-				g.drawLine(lastXValue[channel], lastPlottedValues[channel], currentX, yPix);
-			}
-			/*
-			 * store the x,y coordinates for the next line that needs ot be drawn. 
+
+			/**
+			 * Draw the threshold line
 			 */
-			lastPlottedValues[channel] = yPix;
-			lastXValue[channel] = currentX;
+			g.setColor(Color.BLACK);
+			double threshold = workshopController.getWorkshopProcessParameters().threshold;
+			int yb = getYPixel(threshold);
+			g.drawLine(0, yb, imWidth, yb);
 			
-			
+			ArrayList dataCopy = backgroundDataBlock.getDataCopy();
+			int[] prevX = new int[PamConstants.MAX_CHANNELS];
+			int[] prevY = new int[PamConstants.MAX_CHANNELS];
+			Arrays.fill(prevX, Integer.MIN_VALUE);
+			PamColors pamColors = PamColors.getInstance();
+			int nChan = PamUtils.getNumChannels(backgroundDataBlock.getChannelMap());
+			int iDat = dataCopy.size();
+			Color lineCol;
+			while (--iDat>=0) {
+				BackgroundDataUnit backgroundDataUnit = (BackgroundDataUnit) dataCopy.get(iDat);
+				int chan = PamUtils.getSingleChannel(backgroundDataUnit.getSequenceBitmap());
+				if (chan < 0) {
+					continue;
+				}
+				int xt = (int) (xPix + (backgroundDataUnit.getTimeMilliseconds()-xTime) * xScale);
+				if (xt < 0) xt += imWidth;
+				double level = backgroundDataUnit.getBackground();
+				int y = getYPixel(level);
+				Color col = level > threshold ? Color.red : pamColors.getChannelColor(chan);
+				g.setColor(col);
+				if (prevY[chan] != Integer.MIN_VALUE && xt <= prevX[chan]) {
+					g.drawLine(xt, y, prevX[chan], prevY[chan]);
+				}
+				prevY[chan] = y;
+				prevX[chan] = xt;
+				if (backgroundDataUnit.getTimeMilliseconds() < minTime) {
+					break;
+				}
+			}
 		}
 
 		@Override

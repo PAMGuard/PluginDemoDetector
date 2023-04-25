@@ -1,4 +1,4 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import fftManager.Complex;
 import fftManager.FFTDataBlock;
 import fftManager.FFTDataUnit;
-
+import workshopdemodetector.io.WorkshopSQLLogging;
+import workshopdemodetector.swing.WorkshopOverlayGraphics;
+import workshopdemodetector.swing.WorkshopSymbolManager;
 import Acquisition.AcquisitionProcess;
 import PamController.PamController;
 import PamUtils.PamUtils;
@@ -165,25 +167,26 @@ public class WorkshopProcess extends PamProcess {
 		super.prepareProcess();
 		/*
 		 * Need to hunt around now in the Pamguard model and try to find the FFT
-		 * data block we want and then subscribe to it. 
-		 * First get a list of all PamDataBlocks holding FFT data from the PamController
+		 * data block we want and then subscribe to it. This is now easy since
+		 * everything is referred to by a long dataname. 
 		 */
-		ArrayList<PamDataBlock> fftDataBlocks = PamController.getInstance().getFFTDataBlocks();
-		if (fftDataBlocks == null || 
-				fftDataBlocks.size() <= workshopController.workshopProcessParameters.fftDataBlock) {
-			setParentDataBlock(null);
+
+		fftDataBlock = (FFTDataBlock) PamController.getInstance().getDataBlockByLongName(workshopController.getWorkshopProcessParameters().fftDataName);
+		if (fftDataBlock == null) {
+			// try to find any fft data. 
+			fftDataBlock = (FFTDataBlock) PamController.getInstance().getDataBlock(FFTDataUnit.class, 0);
+		}
+		
+		setParentDataBlock(fftDataBlock);
+		
+		if (fftDataBlock == null) {
 			return;
 		}
-		/*
-		 * If the fft data blocks exist, subscribe to the one in the parameters using the setParentDataBlock method. 
-		 */
-		fftDataBlock = (FFTDataBlock) fftDataBlocks.get(workshopController.workshopProcessParameters.fftDataBlock);
-		setParentDataBlock(fftDataBlock);
 		
 		/*
 		 * usedChannels will be a combination of what we want and what's available.
 		 */
-		usedChannels = fftDataBlock.getChannelMap() & workshopController.workshopProcessParameters.channelList;
+		usedChannels = fftDataBlock.getChannelMap() & workshopController.getWorkshopProcessParameters().channelList;
 		
 		/*
 		 * Tell the output data block which channels data may come from.
@@ -210,9 +213,9 @@ public class WorkshopProcess extends PamProcess {
 		 * work out the bins for energy summation and check they are valid. 
 		 */
 		bin1 = (int) (fftDataBlock.getFftLength() / fftDataBlock.getSampleRate() * 
-				workshopController.workshopProcessParameters.lowFreq);
+				workshopController.getWorkshopProcessParameters().lowFreq);
 		bin2 = (int) (fftDataBlock.getFftLength() / fftDataBlock.getSampleRate() * 
-				workshopController.workshopProcessParameters.highFreq);
+				workshopController.getWorkshopProcessParameters().highFreq);
 		bin1 = Math.min(bin1, fftDataBlock.getFftLength()/2-1);
 		bin1 = Math.max(bin1, 0);
 		bin2 = Math.min(bin2, fftDataBlock.getFftLength()/2-1);
@@ -221,14 +224,14 @@ public class WorkshopProcess extends PamProcess {
 		/*
 		 * convert the threshold which was set in dB to a simple energy ratio
 		 */
-		thresholdRatio = Math.pow(10., workshopController.workshopProcessParameters.threshold/10.);
+		thresholdRatio = Math.pow(10., workshopController.getWorkshopProcessParameters().threshold/10.);
 		
 		/* 
 		 * work out decay constants for background update - this will be a decaying average over time.
 		 * 
 		 */
 		double secsPerBin = fftDataBlock.getFftHop() / fftDataBlock.getSampleRate();
-		backgroundUpdateConstant = secsPerBin / workshopController.workshopProcessParameters.backgroundTimeConstant;
+		backgroundUpdateConstant = secsPerBin / workshopController.getWorkshopProcessParameters().backgroundTimeConstant;
 		backgroundUpdateConstant1 = 1.0 - backgroundUpdateConstant;
 		
 		/*
@@ -244,6 +247,13 @@ public class WorkshopProcess extends PamProcess {
 		
 	}
 	
+	/**
+	 * @return the backgroundDataBlock
+	 */
+	public PamDataBlock<BackgroundDataUnit> getBackgroundDataBlock() {
+		return backgroundDataBlock;
+	}
+
 	/**
 	 * Since the detector may be running on several channels, make a sub class for the actual detector
 	 * code so that multiple instances may be created. 
@@ -321,7 +331,7 @@ public class WorkshopProcess extends PamProcess {
 		  double lastDbValue = 10 * Math.log10(energy / background);
 		  BackgroundDataUnit bdu = new BackgroundDataUnit(absSamplesToMilliseconds(arg.getStartSample()),
 				  arg.getChannelBitmap(), arg.getStartSample(), 0, lastDbValue);
-		  backgroundDataBlock.addPamData(bdu);
+		  getBackgroundDataBlock().addPamData(bdu);
 		  
 		  background *= backgroundUpdateConstant1;
 		  background += (energy * backgroundUpdateConstant);
@@ -370,8 +380,8 @@ public class WorkshopProcess extends PamProcess {
 			/*
 			 * fill in detection information 
 			 */
-			wdu.setFrequency(new double[]{workshopController.workshopProcessParameters.lowFreq,
-					workshopController.workshopProcessParameters.highFreq});
+			wdu.setFrequency(new double[]{workshopController.getWorkshopProcessParameters().lowFreq,
+					workshopController.getWorkshopProcessParameters().highFreq});
 			
 			/*
 			 * now work out the energy in dB re 1 micropascal. This requires knowledge from

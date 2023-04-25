@@ -1,9 +1,11 @@
-package WorkshopDemoBetaBranch;
+package workshopdemodetector.io;
 
 import generalDatabase.PamDetectionLogging;
 import generalDatabase.PamTableDefinition;
 import generalDatabase.PamTableItem;
 import generalDatabase.SQLTypes;
+import workshopdemodetector.WorkshopController;
+import workshopdemodetector.WorkshopDataUnit;
 
 import java.sql.Types;
 
