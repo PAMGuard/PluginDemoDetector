@@ -54,6 +54,13 @@ public class WorkshopParametersDialog extends PamDialog {
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BorderLayout());
 		
+		/**
+		 * For a plugin, add the relative path to the help from wherever
+		 * the plugins helpset is. This can be a bit different to the path 
+		 * for built in modules. The following works for this example. 
+		 */
+		setHelpPoint("docs.demohelp");
+		
 		/* 
 		 * put a sourcePanel in the top of the dialog panel. 
 		 * need to put it in an inner panel in order to add 

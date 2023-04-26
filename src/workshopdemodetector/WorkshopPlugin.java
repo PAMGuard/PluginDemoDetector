@@ -45,7 +45,7 @@ public class WorkshopPlugin implements PamPluginInterface {
 
 	@Override
 	public String getClassName() {
-		return "WorkshopDemoBetaBranch.WorkshopController";
+		return WorkshopController.class.getName();
 	}
 
 	@Override
@@ -95,7 +95,7 @@ public class WorkshopPlugin implements PamPluginInterface {
 
 	@Override
 	public String getHelpSetName() {
-		return null;
+		return "workshopdemodetector/help/DemoDetectorHelp.hs";
 	}
 
 	@Override

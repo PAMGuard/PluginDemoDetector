@@ -42,6 +42,7 @@ import detectiongrouplocaliser.DetectionGroupControl;
 import effortmonitor.EffortControl;
 import whistlesAndMoans.AbstractWhistleDataUnit;
 import workshopdemodetector.WorkshopController;
+import workshopdemodetector.WorkshopPlugin;
 import fftManager.FFTDataUnit;
 import fftManager.PamFFTControl;
 import group3dlocaliser.Group3DLocaliserControl;
@@ -728,10 +729,14 @@ final public class PamModel implements PamModelInterface, PamSettings {
 		mi.setToolTipText("Click Detector module for Soundtrap detector data only");
 //		mi.setHidden(isViewer == false);
 
-		mi = PamModuleInfo.registerControlledUnit(WorkshopController.class.getName(), "Workshop Demo Detector");
-		mi.addDependency(new PamDependency(FFTDataUnit.class, "fftManager.PamFFTControl"));
-		mi.setToolTipText("Simple demo detector for programmers");
-		mi.setModulesMenuGroup(detectorsGroup);	
+		/*
+		 * Don't do it like thi sany more. See added line for a developmental plugin in 
+		 * loadPlugins(...) below. The latter method should also pick up the help files, etc .
+		 */
+//		mi = PamModuleInfo.registerControlledUnit(WorkshopController.class.getName(), "Workshop Demo Detector");
+//		mi.addDependency(new PamDependency(FFTDataUnit.class, "fftManager.PamFFTControl"));
+//		mi.setToolTipText("Simple demo detector for programmers");
+//		mi.setModulesMenuGroup(detectorsGroup);	
 
 
 		//		mi = PamModuleInfo.registerControlledUnit("EdgeDetector.EdgeControl", "Edge Detector");		
@@ -1083,6 +1088,7 @@ final public class PamModel implements PamModelInterface, PamSettings {
 		 * When you export the code for your plugin to a jar file, remember to NOT inlcude the copy of 
 		 * PamModel !
 		 */
+		pluginList.add(new WorkshopPlugin());
 		
 
 		// Load up whatever default classloader was used to create this class.  Must use the same classloader
@@ -1292,10 +1298,11 @@ final public class PamModel implements PamModelInterface, PamSettings {
 				    try {
 						// Save the name of the class to the global pluginBeingLoaded variable
 						this.setPluginBeingLoaded(pf.getClassName());
-						
+//						System.out.println("Setup plugin module " + pf);
+//						System.out.println("Setup plugin module jar file" + pf.getJarFile());
 						// instantiate the plugin control class using the custom class loader
 						try {
-							File classFile = new File(pf.getJarFile());		
+//							File classFile = new File(pf.getJarFile());		
 							//URLClassLoader cl = new URLClassLoader(new URL[]{classFile.toURI().toURL()});
 //							mi = PamModuleInfo.registerControlledUnit(pf.getClassName(), pf.getDescription(),cl);
 							mi = PamModuleInfo.registerControlledUnit(pf.getClassName(), pf.getDescription(),classLoader);
